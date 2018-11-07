@@ -9,3 +9,4 @@ mkDerivation {
     ];
   homepage = "github.com/grumply/pure-txt-search";
   license = stdenv.lib.licenses.bsd3;
+}
