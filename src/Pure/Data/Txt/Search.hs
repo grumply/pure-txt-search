@@ -2,7 +2,6 @@
 module Pure.Data.Txt.Search where
 
 import Pure.Data.Txt as Txt
-import Pure.Data.JSON as JSON
 
 import Data.Monoid
 
