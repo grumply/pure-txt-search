@@ -1,4 +1,4 @@
-{-# LANGUAGE DefaultSignatures, FlexibleContexts, FlexibleInstances, UndecidableInstances, TypeOperators, DataKinds #-}
+{-# LANGUAGE DefaultSignatures, FlexibleContexts, FlexibleInstances, UndecidableInstances, TypeOperators, DataKinds, CPP #-}
 module Pure.Data.Txt.Search where
 
 import Pure.Data.Txt as Txt
@@ -52,8 +52,19 @@ class Search a where
 instance {-# OVERLAPPABLE #-} (ToTxt a) => Search a where
     contains t = contains t . toTxt
 
+-- This fix handles the case that the generic machinery of G.from 
+-- wraps a primitive Txt(JSVal) into an object by re-extracting 
+-- the primitive JSString when compiled with GHCJS.
+#ifdef __GHCJS__
+foreign import javascript unsafe
+    "if ($1 === Object($1)) { $r = $1.d1 } else { $r = $1 }" fix_wrapped_string :: Txt -> Txt
+
+instance {-# OVERLAPPING #-} Search Txt where
+    contains n h = Txt.isInfixOf n (fix_wrapped_string h)
+#else
 instance {-# OVERLAPPING #-} Search Txt where
     contains = Txt.isInfixOf
+#endif
 
 instance (Search a, Search b) => Search (Either a b) where
     contains t (Left  l) = contains t l
