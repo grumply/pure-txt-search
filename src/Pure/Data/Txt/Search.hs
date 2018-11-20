@@ -1,7 +1,10 @@
 {-# LANGUAGE DefaultSignatures, FlexibleContexts, FlexibleInstances, UndecidableInstances, TypeOperators, DataKinds, CPP, ScopedTypeVariables #-}
 module Pure.Data.Txt.Search (Search(..),containsDef,containing) where
+{-# LANGUAGE DefaultSignatures, FlexibleContexts, FlexibleInstances, UndecidableInstances, TypeOperators, DataKinds, CPP, ScopedTypeVariables, StandaloneDeriving, RecordWildCards, DeriveGeneric #-}
+module Pure.Data.Txt.Search (Search(..),SearchOptions(..),defaultSearchOptions,containsDef,containing) where
 
 import Pure.Data.Txt as Txt
+import Pure.Data.View
 
 import Data.List as List
 import Data.Monoid
@@ -55,14 +58,26 @@ import qualified Data.Text.Lazy as TL
 -- [X,Y {test = "X"}]
 --
 class Search a where
-    contains :: Txt -> a -> Bool
+    contains :: SearchOptions -> Txt -> a -> Bool
     {-# INLINE contains #-}
-    default contains :: (Generic a, GSearch (Rep a)) => Txt -> a -> Bool
-    contains t = gcontains t . G.from
+    default contains :: (Generic a, GSearch (Rep a)) => SearchOptions -> Txt -> a -> Bool
+    contains so t = gcontains so t . G.from
+
+data SearchOptions
+    = SearchOptions
+        { constructorNames :: Bool
+        , selectorNames :: Bool
+        } deriving (Eq)
+
+defaultSearchOptions :: SearchOptions
+defaultSearchOptions = SearchOptions True True
+
+instance Default SearchOptions where
+    def = defaultSearchOptions
 
 {-# INLINABLE containing #-}
-containing :: forall b. Search b => Txt -> [b] -> [b] 
-containing needle haystack
+containing :: forall b. Search b => SearchOptions -> Txt -> [b] -> [b] 
+containing so needle haystack
     | Txt.null needle = haystack
     | otherwise       = results
     where
@@ -88,7 +103,7 @@ containing needle haystack
         create w = IntMap.fromList $ fmap (\(i,_) -> (i,1)) (matches w)
 
         matches :: Txt -> [(Int,b)]
-        matches w = Prelude.filter (\(i,x) -> (contains :: Txt -> b -> Bool) w (x :: b)) index
+        matches w = Prelude.filter (\(i,x) -> (contains :: SearchOptions -> Txt -> b -> Bool) so w (x :: b)) index
 
 -- If we do this, newtype type, wrapper and unwrapper will not be searched.
 -- instance {-# OVERLAPPABLE #-} (ToTxt a) => Search a where
@@ -96,8 +111,8 @@ containing needle haystack
 -- Instead, we have the following primtive instances.
 
 {-# INLINE containsDef #-}
-containsDef :: ToTxt a => Txt -> a -> Bool
-containsDef t = contains t . toTxt
+containsDef :: ToTxt a => SearchOptions -> Txt -> a -> Bool
+containsDef so t = contains so t . toTxt
 
 -- overlaps the `(Search a,Foldable f) => Search (f a)` instance since 
 -- we want to treat strings not structurally, but as textual values.
@@ -196,11 +211,11 @@ foreign import javascript unsafe
 
 instance {-# OVERLAPPING #-} Search Txt where
     {-# INLINE contains #-}
-    contains n h = Txt.isInfixOf (Txt.toLower n) (Txt.toLower $ fix_wrapped_string h)
+    contains so n h = Txt.isInfixOf (Txt.toLower n) (Txt.toLower $ fix_wrapped_string h)
 #else
 instance {-# OVERLAPPING #-} Search Txt where
     {-# INLINE contains #-}
-    contains n h = Txt.isInfixOf (Txt.toLower n) (Txt.toLower h)
+    contains so n h = Txt.isInfixOf (Txt.toLower n) (Txt.toLower h)
 #endif
 
 -- rely on the generic machinery to permit searching for `Either`, `Left`, and `Right`.
@@ -211,60 +226,60 @@ instance (Search a) => Search (Maybe a)
 
 instance {-# OVERLAPPABLE #-} (Foldable f, Search a) => Search (f a) where
     {-# INLINE contains #-}
-    contains t = getAny . foldMap (Any . contains t)
+    contains so t = getAny . foldMap (Any . contains so t)
 
-instance {-# OVERLAPPING #-} (Search a, Search b) => Search (a,b) where 
+instance {-# OVERLAPPING #-} (Search a, Search b) => Search (a,b) where
     {-# INLINE contains #-}
-    contains t (a,b) = contains t a || contains t b
+    contains so t (a,b) = contains so t a || contains so t b
 
 instance {-# OVERLAPPING #-} (Search a, Search b, Search c) => Search (a,b,c) where
     {-# INLINE contains #-}
-    contains t (a,b,c) = contains t a || contains t (b,c)
+    contains so t (a,b,c) = contains so t a || contains so t (b,c)
 
 instance {-# OVERLAPPING #-} (Search a, Search b, Search c, Search d) => Search (a,b,c,d) where
     {-# INLINE contains #-}
-    contains t (a,b,c,d) = contains t a || contains t (b,c,d)
+    contains so t (a,b,c,d) = contains so t a || contains so t (b,c,d)
 
 instance {-# OVERLAPPING #-} (Search a, Search b, Search c, Search d, Search e) => Search (a,b,c,d,e) where
     {-# INLINE contains #-}
-    contains t (a,b,c,d,e) = contains t a || contains t (b,c,d,e)
+    contains so t (a,b,c,d,e) = contains so t a || contains so t (b,c,d,e)
 
 instance {-# OVERLAPPING #-} (Search a, Search b, Search c, Search d, Search e, Search f) => Search (a,b,c,d,e,f) where
     {-# INLINE contains #-}
-    contains t (a,b,c,d,e,f) = contains t a || contains t (b,c,d,e,f)
+    contains so t (a,b,c,d,e,f) = contains so t a || contains so t (b,c,d,e,f)
 
 instance {-# OVERLAPPING #-} (Search a, Search b, Search c, Search d, Search e, Search f, Search g) => Search (a,b,c,d,e,f,g) where
     {-# INLINE contains #-}
-    contains t (a,b,c,d,e,f,g) = contains t a || contains t (b,c,d,e,f,g)
+    contains so t (a,b,c,d,e,f,g) = contains so t a || contains so t (b,c,d,e,f,g)
 
 class GSearch a where
-    gcontains :: Txt -> a x -> Bool
+    gcontains :: SearchOptions -> Txt -> a x -> Bool
 
 instance (GSearch a, GSearch b) => GSearch (a :+: b) where
-    gcontains t (L1 l) = gcontains t l
-    gcontains t (R1 r) = gcontains t r
+    gcontains so t (L1 l) = gcontains so t l
+    gcontains so t (R1 r) = gcontains so t r
 
 instance (GSearch a, GSearch b) => GSearch (a :*: b) where
-    gcontains t (l :*: r) = gcontains t l || gcontains t r
+    gcontains so t (l :*: r) = gcontains so t l || gcontains so t r
 
 instance (GSearch f, G.Datatype t) => GSearch (G.M1 D t f) where
     -- Don't search the `datatypeName` here because it's not especially useful.
-    gcontains t d1@(G.M1 m) = gcontains t m
+    gcontains so t d1@(G.M1 m) = gcontains so t m
 
 instance (GSearch f, G.Constructor t) => GSearch (G.M1 C t f) where
-    gcontains t m1@(G.M1 m) =
-        (||) 
-            (contains t $ toTxt $ conName m1)
-            (gcontains t m)
+    gcontains so@SearchOptions {..} t m1@(G.M1 m) =
+        (||)
+            (constructorNames && (contains so t $ toTxt $ conName m1))
+            (gcontains so t m)
 
 instance (GSearch f, G.Selector s) => GSearch (G.M1 S s f) where
-    gcontains t s1@(G.M1 m) =
+    gcontains so@SearchOptions {..} t s1@(G.M1 m) =
         (||)
-            (contains t $ toTxt $ selName s1)
-            (gcontains t m)
+            (selectorNames && (contains so t $ toTxt $ selName s1))
+            (gcontains so t m)
 
 instance (Search a) => GSearch (G.K1 i a) where
-    gcontains t (G.K1 a) = contains t a
+    gcontains so t (G.K1 a) = contains so t a
 
 instance GSearch G.U1 where
-    gcontains _ _ = False
+                    || (selectorNames && contains so t "lazyArg")
