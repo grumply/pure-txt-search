@@ -1,9 +1,9 @@
-{-# LANGUAGE DefaultSignatures, FlexibleContexts, FlexibleInstances, UndecidableInstances, TypeOperators, DataKinds, CPP, ScopedTypeVariables #-}
-module Pure.Data.Txt.Search (Search(..),containsDef,containing) where
 {-# LANGUAGE DefaultSignatures, FlexibleContexts, FlexibleInstances, UndecidableInstances, TypeOperators, DataKinds, CPP, ScopedTypeVariables, StandaloneDeriving, RecordWildCards, DeriveGeneric #-}
 module Pure.Data.Txt.Search (Search(..),SearchOptions(..),defaultSearchOptions,containsDef,containing) where
 
 import Pure.Data.Txt as Txt
+import Pure.Data.Default
+import Pure.Data.Lifted
 import Pure.Data.View
 
 import Data.List as List
@@ -282,4 +282,122 @@ instance (Search a) => GSearch (G.K1 i a) where
     gcontains so t (G.K1 a) = contains so t a
 
 instance GSearch G.U1 where
+    gcontains _ _ _ = False
+
+instance Search Options where
+    contains so@SearchOptions {..} t Options {..} =
+        (constructorNames && contains so t "Options")
+            || (selectorNames && contains so t "preventDef")
+            || (selectorNames && contains so t "stopProp")
+            || (selectorNames && contains so t "passive")
+
+instance Search Target where
+    contains so@SearchOptions {..} t tar = constructorNames &&
+        case tar of
+            ElementTarget  -> contains so t "ElementTarget"
+            WindowTarget   -> contains so t "WindowTarget"
+            DocumentTarget -> contains so t "DocumentTarget"
+
+instance Search Listener where
+    contains so@SearchOptions {..} t On {..} =
+        (constructorNames && contains so t "On")
+            || (selectorNames && contains so t "eventName")
+            || contains so t eventName
+            || (selectorNames && contains so t "eventTarget")
+            || contains so t eventTarget
+            || (selectorNames && contains so t "eventOptions")
+            || contains so t eventOptions
+            || (selectorNames && contains so t "eventAction")
+            || (selectorNames && contains so t "eventStopper")
+
+instance Search Lifecycle where
+    contains so@SearchOptions {..} t HostRef {..} =
+        (constructorNames && contains so t "HostRef")
+            || (selectorNames && contains so t "withHost")
+
+deriving instance Generic Features
+instance Search Features
+
+instance Search View where
+    contains so@SearchOptions {..} t v =
+        case v of
+            NullView {..} ->
+                (constructorNames && contains so t "NullView")
+                    || (selectorNames && contains so t "elementHost")
+            TextView {..} ->
+                (constructorNames && contains so t "TextView")
+                    || (selectorNames && contains so t "textHost")
+                    || (selectorNames && contains so t "content")
+                    || contains so t content
+            RawView {..} ->
+                (constructorNames && contains so t "RawView")
+                    || (selectorNames && contains so t "elementHost")
+                    || (selectorNames && contains so t "tag")
+                    || contains so t tag
+                    || (selectorNames && contains so t "features")
+                    || contains so t features
+                    || (selectorNames && contains so t "content")
+                    || contains so t content
+            HTMLView {..} ->
+                (constructorNames && contains so t "HTMLView")
+                    || (selectorNames && contains so t "elementHost")
+                    || (selectorNames && contains so t "tag")
+                    || contains so t tag
+                    || (selectorNames && contains so t "features")
+                    || contains so t features
+                    || (selectorNames && contains so t "children")
+                    || contains so t children
+            KHTMLView {..} ->
+                (constructorNames && contains so t "KHTMLView")
+                    || (selectorNames && contains so t "elementHost")
+                    || (selectorNames && contains so t "tag")
+                    || contains so t tag
+                    || (selectorNames && contains so t "features")
+                    || contains so t features
+                    || (selectorNames && contains so t "keyedChildren")
+                    || contains so t keyedChildren
+            ComponentView {..} ->
+                (constructorNames && contains so t "ComponentView")
+                    || (selectorNames && contains so t "name")
+                    || contains so t name
+                    || (selectorNames && contains so t "props")
+                    || (selectorNames && contains so t "record")
+                    || (selectorNames && contains so t "Ref")
+                    || (selectorNames && contains so t "comp")
+            SVGView {..} ->
+                (constructorNames && contains so t "SVGView")
+                    || (selectorNames && contains so t "elementHost")
+                    || (selectorNames && contains so t "tag")
+                    || contains so t tag
+                    || (selectorNames && contains so t "features")
+                    || contains so t features
+                    || (selectorNames && contains so t "xlinks")
+                    || contains so t xlinks
+                    || (selectorNames && contains so t "children")
+                    || contains so t children
+            KSVGView {..} ->
+                (constructorNames && contains so t "KSVGView")
+                    || (selectorNames && contains so t "elementHost")
+                    || (selectorNames && contains so t "tag")
+                    || contains so t tag
+                    || (selectorNames && contains so t "features")
+                    || contains so t features
+                    || (selectorNames && contains so t "xlinks")
+                    || contains so t xlinks
+                    || (selectorNames && contains so t "keyedChildren")
+                    || contains so t keyedChildren
+            SomeView {..} ->
+                (constructorNames && contains so t "SomeView")
+                    || (selectorNames && contains so t "name")
+                    || contains so t name
+                    || (selectorNames && contains so t "renderable")
+            PortalView {..} ->
+                (constructorNames && contains so t "PortalView")
+                    || (selectorNames && contains so t "portalProxy")
+                    || (selectorNames && contains so t "portalDestination")
+                    || (selectorNames && contains so t "portalView")
+                    || contains so t portalView
+            LazyView {..} ->
+                (constructorNames && contains so t "LazyView")
+                    || (selectorNames && contains so t "lazyFun")
                     || (selectorNames && contains so t "lazyArg")
