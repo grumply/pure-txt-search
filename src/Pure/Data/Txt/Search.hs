@@ -358,8 +358,6 @@ instance Search View where
                     || contains so t keyedChildren
             ComponentView {..} ->
                 (constructorNames && contains so t "ComponentView")
-                    || (selectorNames && contains so t "name")
-                    || contains so t name
                     || (selectorNames && contains so t "props")
                     || (selectorNames && contains so t "record")
                     || (selectorNames && contains so t "Ref")
@@ -388,8 +386,6 @@ instance Search View where
                     || contains so t keyedChildren
             SomeView {..} ->
                 (constructorNames && contains so t "SomeView")
-                    || (selectorNames && contains so t "name")
-                    || contains so t name
                     || (selectorNames && contains so t "renderable")
             PortalView {..} ->
                 (constructorNames && contains so t "PortalView")
