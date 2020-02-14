@@ -1,22 +1,26 @@
 name:                pure-txt-search
-version:             0.7.0.0
+version:             0.8.0.0
 synopsis:            Generic txt-oriented search classes.
-homepage:            github.com/grumply/pure-txt-search
+homepage:            purehs.org/doc/pure-txt-search
 license:             BSD3
 license-file:        LICENSE
-author:              Sean Mackenzie
-maintainer:          sean@grump.ly
+author:              Sean Hickman
+maintainer:          sean@grumply.com
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
 
+source-repository head
+  type: git
+  location: https://github.com/grumply/pure-txt-search.git
+
 library
   build-depends:
-    base >= 4.8 && < 5,
-    pure-core >= 0.7 && < 1,
-    pure-default >= 0.7 && < 1,
-    pure-lifted >= 0.7 && < 1,
-    pure-txt >= 0.7 && < 1,
+    base,
+    pure-core,
+    pure-default,
+    pure-lifted,
+    pure-txt,
     containers,
     bytestring,
     text

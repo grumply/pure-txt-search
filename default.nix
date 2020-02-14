@@ -2,7 +2,7 @@
 }:
 mkDerivation {
   pname = "pure-txt-search";
-  version = "0.7.0.0";
+  version = "0.8.0.0";
   src = ./.;
   libraryHaskellDepends = [
     base pure-core pure-default pure-lifted pure-txt text bytestring containers
