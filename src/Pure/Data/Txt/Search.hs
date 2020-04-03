@@ -86,16 +86,20 @@ containing so needle haystack
       needles = Txt.words needle
 
       results :: [b]
-      results = fmap snd sorted 
+      results = fmap snd sorted
 
       sorted :: [(Int,b)]
       sorted = List.sortBy (flip (comparing fst)) processed
 
       processed :: [(Int,b)]
-      processed = fmap process haystack
+      processed = mapMaybe process haystack
 
-      process :: b -> (Int,b)
-      process x = (List.length $ mapMaybe (\needle -> if contains so needle x then Just () else Nothing) needles,x)
+      process :: b -> Maybe (Int,b)
+      process x = 
+        let matches = List.length (mapMaybe match needles)
+            match x | contains so needle x = Just ()
+                    | otherwise            = Nothing
+         in if matches == 0 then Nothing else Just (matches,x)
 
 -- If we do this, newtype type, wrapper and unwrapper will not be searched.
 -- instance {-# OVERLAPPABLE #-} (ToTxt a) => Search a where
