@@ -7,8 +7,8 @@ import Pure.Data.Lifted
 import Pure.Data.View
 
 import Data.List as List
+import Data.Maybe
 import Data.Monoid
-import Data.IntMap as IntMap
 import GHC.Generics as G
 import GHC.TypeLits
 
@@ -16,6 +16,7 @@ import GHC.TypeLits
 import qualified Data.ByteString.Char8 as BSC
 import qualified Data.ByteString.Lazy.Char8 as BSLC
 import Data.Int
+import Data.Ord
 import Data.Word
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
@@ -81,29 +82,20 @@ containing so needle haystack
     | Txt.null needle = haystack
     | otherwise       = results
     where
-        index :: [(Int,b)]
-        index = List.zip [0..] haystack
+      needles :: [Txt]
+      needles = Txt.words needle
 
-        results :: [b]
-        results = fmap (\(i,_) -> haystack !! i) sorted
+      results :: [b]
+      results = fmap snd sorted 
 
-        sorted :: [(Int,Int)]
-        sorted = List.sortOn snd assocs
+      sorted :: [(Int,b)]
+      sorted = List.sortBy (flip (comparing fst)) processed
 
-        assocs :: [(Int,Int)]
-        assocs = IntMap.assocs merged
+      processed :: [(Int,b)]
+      processed = fmap process haystack
 
-        merged :: IntMap Int
-        merged = IntMap.unionsWith (+) indexes
-
-        indexes :: [IntMap Int]
-        indexes = create <$> (Txt.words needle)
-
-        create :: Txt -> IntMap Int
-        create w = IntMap.fromList $ fmap (\(i,_) -> (i,1)) (matches w)
-
-        matches :: Txt -> [(Int,b)]
-        matches w = Prelude.filter (\(i,x) -> (contains :: SearchOptions -> Txt -> b -> Bool) so w (x :: b)) index
+      process :: b -> (Int,b)
+      process x = (List.length $ mapMaybe (\needle -> if contains so needle x then Just () else Nothing) needles,x)
 
 -- If we do this, newtype type, wrapper and unwrapper will not be searched.
 -- instance {-# OVERLAPPABLE #-} (ToTxt a) => Search a where
