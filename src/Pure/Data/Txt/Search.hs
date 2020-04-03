@@ -97,8 +97,9 @@ containing so needle haystack
       process :: b -> Maybe (Int,b)
       process x = 
         let matches = List.length (mapMaybe match needles)
-            match x | contains so needle x = Just ()
-                    | otherwise            = Nothing
+            match needle 
+              | contains so needle x = Just ()
+              | otherwise            = Nothing
          in if matches == 0 then Nothing else Just (matches,x)
 
 -- If we do this, newtype type, wrapper and unwrapper will not be searched.
