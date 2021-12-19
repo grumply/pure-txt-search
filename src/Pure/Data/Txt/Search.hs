@@ -221,31 +221,38 @@ instance (Search a, Search b) => Search (Either a b)
 -- rely on the generic machinery to permit searching for `Maybe`, `Nothing`, and `Just`.
 instance (Search a) => Search (Maybe a)
 
+{-
 instance {-# OVERLAPPABLE #-} (Foldable f, Search a) => Search (f a) where
     {-# INLINE contains #-}
-    contains so t = getAny . foldMap (Any . contains so t)
+    contains = containsDefFoldable
+-}
 
-instance {-# OVERLAPPING #-} (Search a, Search b) => Search (a,b) where
+instance {-# OVERLAPPABLE #-} Search a => Search [a] where
+    contains = containsDefFoldable
+
+containsDefFoldable so t = getAny . foldMap (Any. contains so t)
+
+instance (Search a, Search b) => Search (a,b) where
     {-# INLINE contains #-}
     contains so t (a,b) = contains so t a || contains so t b
 
-instance {-# OVERLAPPING #-} (Search a, Search b, Search c) => Search (a,b,c) where
+instance (Search a, Search b, Search c) => Search (a,b,c) where
     {-# INLINE contains #-}
     contains so t (a,b,c) = contains so t a || contains so t (b,c)
 
-instance {-# OVERLAPPING #-} (Search a, Search b, Search c, Search d) => Search (a,b,c,d) where
+instance (Search a, Search b, Search c, Search d) => Search (a,b,c,d) where
     {-# INLINE contains #-}
     contains so t (a,b,c,d) = contains so t a || contains so t (b,c,d)
 
-instance {-# OVERLAPPING #-} (Search a, Search b, Search c, Search d, Search e) => Search (a,b,c,d,e) where
+instance (Search a, Search b, Search c, Search d, Search e) => Search (a,b,c,d,e) where
     {-# INLINE contains #-}
     contains so t (a,b,c,d,e) = contains so t a || contains so t (b,c,d,e)
 
-instance {-# OVERLAPPING #-} (Search a, Search b, Search c, Search d, Search e, Search f) => Search (a,b,c,d,e,f) where
+instance (Search a, Search b, Search c, Search d, Search e, Search f) => Search (a,b,c,d,e,f) where
     {-# INLINE contains #-}
     contains so t (a,b,c,d,e,f) = contains so t a || contains so t (b,c,d,e,f)
 
-instance {-# OVERLAPPING #-} (Search a, Search b, Search c, Search d, Search e, Search f, Search g) => Search (a,b,c,d,e,f,g) where
+instance (Search a, Search b, Search c, Search d, Search e, Search f, Search g) => Search (a,b,c,d,e,f,g) where
     {-# INLINE contains #-}
     contains so t (a,b,c,d,e,f,g) = contains so t a || contains so t (b,c,d,e,f,g)
 
@@ -312,8 +319,21 @@ instance Search Lifecycle where
         (constructorNames && contains so t "HostRef")
             || (selectorNames && contains so t "withHost")
 
-deriving instance Generic Features
-instance Search Features
+instance Search Features where
+    contains so@SearchOptions {..} t Features_ {..} =
+        (constructorNames && contains so t "Features")
+            || (selectorNames && contains so t "classes")
+            || containsDefFoldable so t classes
+            || (selectorNames && contains so t "styles")
+            || containsDefFoldable so t styles
+            || (selectorNames && contains so t "attributes")
+            || containsDefFoldable so t attributes
+            || (selectorNames && contains so t "properties")
+            || containsDefFoldable so t properties
+            || (selectorNames && contains so t "listeners")
+            || containsDefFoldable so t listeners
+            || (selectorNames && contains so t "lifecycles")
+            || containsDefFoldable so t lifecycles
 
 instance Search View where
     contains so@SearchOptions {..} t v =
@@ -343,7 +363,7 @@ instance Search View where
                     || (selectorNames && contains so t "features")
                     || contains so t features
                     || (selectorNames && contains so t "children")
-                    || contains so t children
+                    || containsDefFoldable so t children
             KHTMLView {..} ->
                 (constructorNames && contains so t "KHTMLView")
                     || (selectorNames && contains so t "elementHost")
@@ -352,7 +372,7 @@ instance Search View where
                     || (selectorNames && contains so t "features")
                     || contains so t features
                     || (selectorNames && contains so t "keyedChildren")
-                    || contains so t keyedChildren
+                    || containsDefFoldable so t keyedChildren
             ComponentView {..} ->
                 (constructorNames && contains so t "ComponentView")
                     || (selectorNames && contains so t "props")
@@ -367,9 +387,9 @@ instance Search View where
                     || (selectorNames && contains so t "features")
                     || contains so t features
                     || (selectorNames && contains so t "xlinks")
-                    || contains so t xlinks
+                    || containsDefFoldable so t xlinks
                     || (selectorNames && contains so t "children")
-                    || contains so t children
+                    || containsDefFoldable so t children
             KSVGView {..} ->
                 (constructorNames && contains so t "KSVGView")
                     || (selectorNames && contains so t "elementHost")
@@ -378,9 +398,9 @@ instance Search View where
                     || (selectorNames && contains so t "features")
                     || contains so t features
                     || (selectorNames && contains so t "xlinks")
-                    || contains so t xlinks
+                    || containsDefFoldable so t xlinks
                     || (selectorNames && contains so t "keyedChildren")
-                    || contains so t keyedChildren
+                    || containsDefFoldable so t keyedChildren
             SomeView {..} ->
                 (constructorNames && contains so t "SomeView")
                     || (selectorNames && contains so t "renderable")
